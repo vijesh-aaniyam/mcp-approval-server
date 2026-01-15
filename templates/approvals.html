@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Fraud Approvals</title>
+</head>
+<body>
+  <h2>Pending Approvals</h2>
+  <div id="list"></div>
+
+<script>
+async function loadApprovals() {
+  const res = await fetch('/tools/list_pending');
+  const data = await res.json();
+
+  document.getElementById('list').innerHTML = data.map(a => `
+    <div style="border:1px solid #ccc; padding:10px; margin:10px">
+      <b>Bib:</b> ${a.bib}<br/>
+      <b>Fraud:</b> ${a.fraud_level} (${a.fraud_score})<br/>
+      <textarea id="reason-${a.approval_id}" placeholder="Decision reason"></textarea><br/>
+      <button onclick="decide('${a.approval_id}', true)">Approve</button>
+      <button onclick="decide('${a.approval_id}', false)">Reject</button>
+    </div>
+  `).join('');
+}
+
+async function decide(id, approved) {
+  await fetch('/tools/submit_approval_decision', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      approval_id: id,
+      approved: approved,
+      reviewer: 'organizer1',
+      reviewer_role: 'REVIEWER',
+      reason: document.getElementById(`reason-${id}`).value
+    })
+  });
+  loadApprovals();
+}
+
+loadApprovals();
+</script>
+</body>
+</html>
